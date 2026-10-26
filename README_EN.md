@@ -22,8 +22,8 @@ China code mirror: [OpenBiliClaw on AtomGit](https://atomgit.com/whiteguo233/Ope
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo-dark.png">
-    <img src="/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo.png" alt="Powered by SiliconFlow" width="260" height="36">
+    <source media="(prefers-color-scheme: dark)" srcset="https://gitee.com/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo-dark.png">
+    <img src="https://gitee.com/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo.png" alt="Powered by SiliconFlow" width="260" height="36">
   </picture>
   <br>
   <sub>Model compute support: thanks to <a href="https://www.siliconflow.cn">SiliconFlow</a> for free model credits and inference support · <a href="docs/partners.md">Partnership details</a></sub>
