@@ -47,8 +47,9 @@ Docker 中的网卡地址通常属于容器。请在自定义地址输入宿主�
 
 - `tests/test_mobile_connection_info.py`：有效监听参数、系统 / 应用内节点隔离、inactive 状态、LAN 排除 Tailnet、QR v5 / v10 与 Python 编码器逐格比对。
 - `tests/js/mobile-network-qr.test.mjs`：保存的回环地址覆盖 LAN 的原始复现、无地址时不绘码、HTTPS / IPv6 / 代理路径、三种网络与监听边界。
+- `tests/test_mobile_connection_live.py`：显式指定实际后端后，真实发现 → 共享 JS 地址与 QR 编码 → 生成地址的 HTML / 静态资源 / 业务请求；不注入接口响应。
 - App `backend_connection_link_test.dart`、`settings_qr_connection_test.dart`：解析、扫码保存、重连、持久化和连接模式；原有手动配置回归继续保留。
 
-网络是否允许手机访问仍取决于 Wi-Fi 互访、系统防火墙和 tailnet grants。自动化测试不等于真实跨设备网络或手机相机验收；联调结果见[分支验收记录](verification/2026-10-26-mobile-connection.md)。
+网络是否允许手机访问仍取决于 Wi-Fi 互访、系统防火墙和 tailnet grants。自动化测试不等于真实跨设备网络或手机相机验收；联调结果见[分支验收记录](verification/2026-10-26-mobile-connection.md)与[真实环境验证](verification/2026-10-27-mobile-connection-live.md)。
 
 官方参考：[Tailscale 地址范围](https://tailscale.com/docs/reference/reserved-ip-addresses)、[mobile_scanner](https://pub.dev/packages/mobile_scanner)。

@@ -1,5 +1,7 @@
 # 手机扫码连接验证（2026-10-26）
 
+后续真实请求与设备验收见 [2026-10-27 真实环境验证](2026-10-27-mobile-connection-live.md)，不要将本页的合成浏览器服务结果当成真实网络验收。
+
 后端分支：`codex/mobile-network-qr`；配套 App 分支位于独立 `OpenBiliClaw-mobile` 仓库，分支同名。两边均从各自主工作区的 HEAD 创建独立 worktree，未复制主工作区已有的 README / 宣传素材或 App 修改。
 
 ## 复现与修复
