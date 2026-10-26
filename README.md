@@ -25,8 +25,8 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/images/siliconflow-logo-dark.png">
-    <img src="docs/images/siliconflow-logo.png" alt="Powered by SiliconFlow" width="260" height="36">
+    <source media="(prefers-color-scheme: dark)" srcset="/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo-dark.png">
+    <img src="/whiteguo233/OpenBiliClaw/raw/main/docs/images/siliconflow-logo.png" alt="Powered by SiliconFlow" width="260" height="36">
   </picture>
   <br>
   <sub>模型算力支持：感谢 <a href="https://www.siliconflow.cn">硅基流动（SiliconFlow）</a> 提供免费模型额度与推理支持 · <a href="docs/partners.md">合作说明</a></sub>
