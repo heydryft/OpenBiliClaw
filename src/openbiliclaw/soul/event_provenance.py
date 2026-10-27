@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 # and carries the same meaning, so both are honoured.
 SNAPSHOT_METADATA_KEY = "snapshot"
 IMPORT_SOURCE_METADATA_KEY = "import_source"
+TIMESTAMP_METADATA_KEY = "timestamp"
 TIME_QUALITY_METADATA_KEY = "time_quality"
 SNAPSHOT_TOTAL_METADATA_KEY = "snapshot_total"
 CREATORS_METADATA_KEY = "creators"
@@ -180,20 +181,29 @@ def apply_event_provenance(
     """Project ledger rows into prompt-shape rows with honest time provenance.
 
     ``created_at`` is always removed: it is the write moment, and the only way
-    a model can honour that is to never see it. Rows that still have a real
-    source timestamp keep it (``metadata.timestamp``); rows that do not are
-    labelled ``time_quality="ingest"`` so the prompt rule "no timestamp means
-    time unknown" has something concrete to bind to.
+    a model can honour that is to never see it.
+
+    A real interaction time that a producer parked under a platform-private key
+    (``interaction_time`` / ``watched_at`` / ``view_at`` …) is promoted into
+    ``metadata.timestamp``, so the prompt's "timestamp is the moment" contract
+    holds for every source instead of silently treating those rows as undated.
+    Rows with no interaction time are labelled ``time_quality="ingest"`` so the
+    prompt rule "no timestamp means time unknown" has something to bind to.
     """
     projected: list[dict[str, Any]] = []
     for event in events:
         row = dict(event)
         metadata = dict(event_metadata(event))
         row.pop("created_at", None)
-        if not has_source_time(event):
+        source_epoch = _event_epoch(event)
+        if source_epoch > 0:
+            if not metadata.get(TIMESTAMP_METADATA_KEY):
+                # Promote the private key so the prompt sees one canonical time
+                # field regardless of which producer wrote the row.
+                metadata[TIMESTAMP_METADATA_KEY] = _epoch_to_iso(source_epoch)
+            metadata.setdefault(TIME_QUALITY_METADATA_KEY, TIME_QUALITY_SOURCE)
+        else:
             metadata.setdefault(TIME_QUALITY_METADATA_KEY, TIME_QUALITY_INGEST)
-        elif not str(metadata.get(TIME_QUALITY_METADATA_KEY) or "").strip():
-            metadata[TIME_QUALITY_METADATA_KEY] = TIME_QUALITY_SOURCE
         row["metadata"] = metadata or None
         projected.append(row)
     return projected

@@ -90,9 +90,21 @@ _STRONG_HISTORY_EVENTS = frozenset(
 
 
 def _history_timestamp(item: dict[str, Any]) -> float:
-    """Best-effort epoch seconds for a history row (0.0 when unknown)."""
+    """Best-effort epoch seconds for a history row (0.0 when unknown).
+
+    The metadata reader is shared with the event layer so every interaction-time
+    key (``view_at`` / ``fav_time`` / ``mtime`` / ``watched_at`` /
+    ``interaction_time`` / ``starred_at``) buckets identically — a row was
+    falling out of the time buckets whenever its producer picked a different
+    key name.
+    """
+    from openbiliclaw.sources.event_format import parse_event_timestamp
+
     raw_metadata = item.get("metadata")
     metadata: dict[str, Any] = raw_metadata if isinstance(raw_metadata, dict) else {}
+    parsed = parse_event_timestamp(metadata)
+    if parsed is not None:
+        return parsed.timestamp()
     for value in (
         item.get("view_at"),
         # Favourites timestamp themselves with fav_time; without it every

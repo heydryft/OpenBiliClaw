@@ -10,6 +10,7 @@ import inspect
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -18,6 +19,7 @@ import uuid
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, cast
 
@@ -17526,6 +17528,144 @@ def discover_douyin(
         cache=not no_cache,
         evaluate=not no_evaluate,
     )
+
+
+@app.command("profile-repair-provenance")
+def profile_repair_provenance(
+    apply: bool = typer.Option(
+        False,
+        "--apply",
+        help="真正写入修复结果。默认 dry-run：只打印将要做的改动。",
+    ),
+) -> None:
+    """修复被错误时间线 / MBTI / 产品运维话题污染的画像数据。
+
+    三类污染：
+
+    \b
+      - insight 的 evidence 里把 MBTI 类型当证据（标签本身来自导入假数据）
+      - 觉察笔记的「同一天 / 快速切换」来自导入时刻，而不是真实行为时间
+      - 对话来的兴趣 / 避雷其实是「使用本产品」的运维话题
+
+    默认 dry-run。--apply 会先把三层文件备份到
+    data/memory/provenance_repair_runs/<timestamp>/ 再写入；写入前请先停掉
+    正在运行的后端，否则内存里的旧快照会覆盖修复结果。
+    """
+    from openbiliclaw.soul.provenance_repair import plan_provenance_repair
+
+    _print_page_title("画像来源修复", "profile-repair-provenance")
+    memory = _build_memory_manager()
+    preference_layer = memory.get_layer("preference")
+    awareness_layer = memory.get_layer("awareness")
+    insight_layer = memory.get_layer("insight")
+
+    awareness = awareness_layer.data if isinstance(awareness_layer.data, dict) else {}
+    insights = insight_layer.data if isinstance(insight_layer.data, dict) else {}
+    preference = preference_layer.data if isinstance(preference_layer.data, dict) else {}
+
+    mbti_type = ""
+    soul_data = getattr(memory.get_layer("soul"), "data", None)
+    core = soul_data.get("core") if isinstance(soul_data, dict) else None
+    if isinstance(core, dict):
+        mbti = core.get("mbti")
+        if isinstance(mbti, dict):
+            mbti_type = str(mbti.get("type") or "")
+
+    plan = plan_provenance_repair(
+        awareness=awareness,
+        insights=insights,
+        preference=preference,
+        event_times=_provenance_event_times(awareness),
+        mbti_type=mbti_type,
+    )
+
+    rows = [
+        ("删掉的 MBTI 证据", f"{plan.summary['insight_evidence_removed']} 条"),
+        ("修好的洞察", f"{plan.summary['insights_repaired']} 条"),
+        ("作废的洞察", f"{plan.summary['insights_invalidated']} 条"),
+        ("隔离的觉察笔记", f"{plan.summary['awareness_quarantined']} 条"),
+        ("无法验证的觉察", f"{plan.summary['awareness_unverified']} 条"),
+        ("归档的兴趣", f"{plan.summary['interests_archived']} 个"),
+        ("待人工确认的兴趣", f"{plan.summary['interests_review']} 个"),
+        ("归档的避雷主题", f"{plan.summary['dislikes_archived']} 个"),
+    ]
+    _print_key_value_table("修复计划", rows)
+    for detail in plan.details[:200]:
+        console.print(f"  [dim]· {detail}[/dim]")
+    if len(plan.details) > 200:
+        console.print(f"  [dim]… 另有 {len(plan.details) - 200} 条明细未显示[/dim]")
+
+    if not plan.changed:
+        console.print("\n[green]没有需要修复的数据。[/green]")
+        return
+    if not apply:
+        console.print("\n[yellow]dry-run：加 --apply 才会写入（会先自动备份）。[/yellow]")
+        return
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_dir = preference_layer.storage_path.parent / "provenance_repair_runs" / stamp
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    for layer in (preference_layer, awareness_layer, insight_layer):
+        if layer.storage_path.exists():
+            shutil.copy2(layer.storage_path, backup_dir / layer.storage_path.name)
+
+    preference_layer.data = plan.preference
+    awareness_layer.data = plan.awareness
+    insight_layer.data = plan.insights
+    preference_layer.save()
+    awareness_layer.save()
+    insight_layer.save()
+    console.print(f"\n[green]已写入修复结果，备份在 {backup_dir}[/green]")
+
+
+def _provenance_event_times(awareness: dict[str, Any]) -> dict[int, float]:
+    """Resolve ``source_event_ids`` to their real interaction epoch seconds.
+
+    Notes cite event ids; only the events' own interaction time (``view_at`` /
+    ``fav_time`` / ``mtime`` / ``interaction_time`` …) decides whether a
+    「同一天」 claim is true. Events without one stay absent.
+    """
+    from openbiliclaw.sources.event_format import parse_event_timestamp
+
+    notes = awareness.get("notes")
+    if not isinstance(notes, list):
+        return {}
+    ids: set[int] = set()
+    for note in notes:
+        raw_ids = note.get("source_event_ids") if isinstance(note, dict) else None
+        for raw in raw_ids or []:
+            try:
+                event_id = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if event_id > 0:
+                ids.add(event_id)
+    if not ids:
+        return {}
+
+    try:
+        database = _get_runtime_database()
+        placeholders = ",".join("?" for _ in ids)
+        rows = database.conn.execute(
+            f"SELECT id, metadata FROM events WHERE id IN ({placeholders})",
+            sorted(ids),
+        ).fetchall()
+    except Exception as exc:
+        console.print(f"[yellow]  读取事件时间失败，跳过时序校验：{exc}[/yellow]")
+        return {}
+
+    times: dict[int, float] = {}
+    for event_id, raw_metadata in rows:
+        metadata = raw_metadata
+        if isinstance(raw_metadata, str):
+            try:
+                metadata = json.loads(raw_metadata)
+            except (TypeError, ValueError):
+                metadata = {}
+        parsed = parse_event_timestamp(metadata if isinstance(metadata, dict) else {})
+        if parsed is not None:
+            times[int(event_id)] = parsed.timestamp()
+    return times
 
 
 @app.command()

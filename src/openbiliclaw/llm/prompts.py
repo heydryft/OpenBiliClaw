@@ -1472,6 +1472,10 @@ core_memory、这轮对话、以及 active_list 都在 user 消息里给出。
 7. settles[].verdict 只允许: confirm (这轮明确印证), reject (这轮明确否定)。
    只有用户明确表态才结算,含糊不清时不结算。
 8. 若没有可结算对象,settles 返回空数组。
+9. **用工具不等于兴趣**：用户只是在配置、调试、部署、排障 OpenBiliClaw 本身时,
+   不要生成「系统配置与测试」「参数化调试方法论」这类候选;只有用户明确表达
+   自己长期喜欢的内容或活动才算 interest,对 dislike 同理。提到产品名不代表
+   产品本身是兴趣。
 </rules>
 
 <output_schema>
