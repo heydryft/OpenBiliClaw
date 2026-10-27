@@ -17551,7 +17551,10 @@ def profile_repair_provenance(
     data/memory/provenance_repair_runs/<timestamp>/ 再写入；写入前请先停掉
     正在运行的后端，否则内存里的旧快照会覆盖修复结果。
     """
-    from openbiliclaw.soul.provenance_repair import plan_provenance_repair
+    from openbiliclaw.soul.provenance_repair import (
+        plan_provenance_repair,
+        replace_layer_payload,
+    )
 
     _print_page_title("画像来源修复", "profile-repair-provenance")
     memory = _build_memory_manager()
@@ -17609,12 +17612,9 @@ def profile_repair_provenance(
         if layer.storage_path.exists():
             shutil.copy2(layer.storage_path, backup_dir / layer.storage_path.name)
 
-    preference_layer.data = plan.preference
-    awareness_layer.data = plan.awareness
-    insight_layer.data = plan.insights
-    preference_layer.save()
-    awareness_layer.save()
-    insight_layer.save()
+    replace_layer_payload(preference_layer, plan.preference)
+    replace_layer_payload(awareness_layer, plan.awareness)
+    replace_layer_payload(insight_layer, plan.insights)
     console.print(f"\n[green]已写入修复结果，备份在 {backup_dir}[/green]")
 
 

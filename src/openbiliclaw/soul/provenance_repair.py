@@ -24,7 +24,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol
 
 from openbiliclaw.soul.meta_usage import (
     DIALOGUE_SOURCES,
@@ -105,10 +105,17 @@ def _note_event_times(
 
 
 def _is_mbti_evidence(text: str, mbti_type: str) -> bool:
+    """Whether an evidence line is the MBTI label itself.
+
+    No "型"/"MBTI" suffix is required: the real corpus also contains
+    "ENTP认知风格擅长联想综合…". The four-letter token is unambiguous — the
+    pattern only matches the sixteen type codes, and lowercase text is left
+    alone.
+    """
     upper = text.upper()
     if mbti_type and mbti_type.strip().upper() in upper:
         return True
-    return bool(_MBTI_LABEL_RE.search(text)) and ("型" in text or "MBTI" in upper)
+    return bool(_MBTI_LABEL_RE.search(text))
 
 
 def _repair_insights(
@@ -304,3 +311,26 @@ def plan_provenance_repair(
         summary=summary,
         details=tuple(details),
     )
+
+
+class LayerLike(Protocol):
+    """Minimal memory-layer surface needed to publish a repaired payload."""
+
+    @property
+    def data(self) -> dict[str, Any]: ...
+
+    def save(self) -> None: ...
+
+
+def replace_layer_payload(layer: LayerLike, payload: Mapping[str, Any]) -> None:
+    """Publish a repaired payload into a memory layer and persist it.
+
+    ``MemoryLayer.data`` is a read-only property, so the payload is applied
+    in place (clear + update) rather than assigned; ``save()`` then writes the
+    layer file. Assignment raises ``AttributeError`` at the very end of the
+    command, after the backup has already been taken.
+    """
+    data = layer.data
+    data.clear()
+    data.update(payload)
+    layer.save()

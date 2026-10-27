@@ -244,3 +244,47 @@ def test_approximate_event_ids_never_cause_quarantine() -> None:
 
     assert len(plan.awareness["notes"]) == 1
     assert plan.summary["awareness_quarantined"] == 0
+
+
+class _FakeLayer:
+    """Mirrors MemoryLayer: `data` is a read-only property, `save()` persists."""
+
+    def __init__(self, payload: dict[str, Any]) -> None:
+        self._data = payload
+        self.saved = 0
+
+    @property
+    def data(self) -> dict[str, Any]:
+        return self._data
+
+    def save(self) -> None:
+        self.saved += 1
+
+
+def test_replace_layer_payload_works_against_a_read_only_data_property() -> None:
+    """Assigning `layer.data` raises on the real class; clear+update does not."""
+    from openbiliclaw.soul.provenance_repair import replace_layer_payload
+
+    layer = _FakeLayer({"interests": ["old"], "keep": 1})
+
+    replace_layer_payload(layer, {"interests": ["new"]})
+
+    assert layer.data == {"interests": ["new"]}
+    assert layer.saved == 1
+
+
+def test_mbti_evidence_without_the_word_typename_is_detected() -> None:
+    """The real corpus also says "ENTP认知风格…" with no 型/MBTI suffix."""
+    insights = {
+        "hypotheses": [
+            {
+                "hypothesis": "跨领域联想",
+                "evidence": ["ENTP认知风格擅长联想综合，跨领域内容可能激发新视角。"],
+                "confidence": 0.6,
+            }
+        ]
+    }
+
+    plan = _plan(insights=insights, mbti_type="ISTP")
+
+    assert plan.summary["insight_evidence_removed"] == 1
