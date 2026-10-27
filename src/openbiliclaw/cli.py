@@ -1711,7 +1711,18 @@ def _history_item_to_event(item: dict[str, Any]) -> dict[str, Any]:
     metadata: dict[str, Any] = {
         "bvid": bvid,
         "view_at": view_at,
+        # Guided init reads the back catalogue in one pass; without the flag
+        # the ledger has no way to say "this is history, not what happened
+        # this afternoon". ``view_at`` is mirrored into the canonical time key
+        # because the ledger's own ``created_at`` is the import moment.
+        "snapshot": True,
     }
+    try:
+        view_at_seconds = int(view_at)
+    except (TypeError, ValueError):
+        view_at_seconds = 0
+    if view_at_seconds > 0:
+        metadata["timestamp"] = view_at_seconds
     if bvid:
         metadata["content_id"] = bvid
     # Watch metrics decide how ``classify_event_satisfaction`` reads this row.
@@ -5612,6 +5623,32 @@ def _drop_events_already_imported(
     return kept, skipped
 
 
+def _follow_time_window(following: list[dict[str, Any]]) -> str:
+    """Render the real follow span as ``（关注时间 2019-03 ~ 2026-08）``.
+
+    Returns an empty string when upstream supplied no ``mtime``, so the caller
+    never invents a window it cannot prove.
+    """
+    stamps: list[int] = []
+    for user in following:
+        raw = user.get("mtime")
+        if isinstance(raw, bool) or not isinstance(raw, int | float | str):
+            continue
+        try:
+            seconds = int(float(raw))
+        except (TypeError, ValueError):
+            continue
+        if seconds > 0:
+            stamps.append(seconds)
+    if not stamps:
+        return ""
+    from datetime import UTC, datetime
+
+    first = datetime.fromtimestamp(min(stamps), UTC).strftime("%Y-%m")
+    last = datetime.fromtimestamp(max(stamps), UTC).strftime("%Y-%m")
+    return f"（关注时间 {first} ~ {last}）"
+
+
 def _favorites_to_history_rows(favorites: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Turn fetched favourites into individual profile-history rows.
 
@@ -5683,6 +5720,12 @@ def _build_bilibili_init_events(
         duration = fav.get("duration")
         if isinstance(duration, (int, float)) and duration > 0:
             fav_metadata["video_duration_seconds"] = float(duration)
+        # Guided init is the account's back catalogue: every row is an import,
+        # and ``fav_time`` is the only honest moment it carries.
+        fav_metadata["snapshot"] = True
+        fav_time = fav_metadata.get("fav_time")
+        if isinstance(fav_time, int) and not isinstance(fav_time, bool) and fav_time > 0:
+            fav_metadata["timestamp"] = fav_time
         events.append(
             build_event(
                 event_type="favorite",
@@ -5696,6 +5739,17 @@ def _build_bilibili_init_events(
     for user in following_data:
         sign = str(user.get("sign", "")).strip()
         name = str(user.get("name", ""))
+        follow_metadata: dict[str, Any] = {
+            "up_name": name,
+            "sign": sign,
+            # The following list is inventory: it arrives as one batch even
+            # though the follows happened across years.
+            "snapshot": True,
+        }
+        mtime = user.get("mtime")
+        if isinstance(mtime, int) and mtime > 0:
+            follow_metadata["mtime"] = mtime
+            follow_metadata["timestamp"] = mtime
         events.append(
             build_event(
                 event_type="follow",
@@ -5705,10 +5759,7 @@ def _build_bilibili_init_events(
                 context=(
                     f"在 B 站关注了《{name}》,签名:{sign}" if sign else f"在 B 站关注了《{name}》"
                 ),
-                metadata={
-                    "up_name": name,
-                    "sign": sign,
-                },
+                metadata=follow_metadata,
             )
         )
     return events
@@ -9072,6 +9123,10 @@ async def _fetch_bilibili_init_data(
                     {
                         "name": getattr(user, "uname", str(user)),
                         "sign": getattr(user, "sign", ""),
+                        # Real follow moment (epoch seconds). Guided init used
+                        # to keep only name + signature, so the whole following
+                        # list arrived undated and read as one day of activity.
+                        "mtime": int(getattr(user, "mtime", 0) or 0),
                     }
                 )
             if len(page_users) < page_size:
@@ -10830,13 +10885,21 @@ async def run_guided_init(
             }
         )
     if following_data:
+        # Say out loud that this is inventory, and when it was built. A bare
+        # "共关注 500 人" reads as social behaviour and used to push the
+        # extraversion dimension; the following list is years of accumulation
+        # fetched in one batch, and Bilibili's ``mtime`` lets us show the span.
+        following_window = _follow_time_window(following_data)
         combined_history.append(
             {
                 "title": "[关注列表汇总]",
                 "_following": following_data,
-                "_following_summary": f"共关注 {len(following_data)} 人，"
-                + "包括: "
-                + ", ".join(f["name"] for f in following_data[:100]),
+                "_following_summary": (
+                    f"共关注 {len(following_data)} 人{following_window}。"
+                    "这是账号长期累积的关注清单（一次性导入的存量），"
+                    "不代表近期行为、活跃度或社交频率。包括: "
+                    + ", ".join(f["name"] for f in following_data[:100])
+                ),
             }
         )
     if xhs_events:
