@@ -102,6 +102,19 @@ def is_product_operations_message(text: str) -> bool:
     return len(_hits(lowered, OPERATIONAL_TERMS)) >= 2
 
 
+def is_dialogue_source(source: str) -> bool:
+    """Whether an interest's provenance is a chat/dialogue path.
+
+    Observed values in the wild: ``dialogue``, ``对话洞察``, ``chat feedback
+    confirmed``. Matching is substring-based because producers keep inventing
+    variants, and a missed variant is exactly how the tool-usage topics got in.
+    """
+    lowered = str(source or "").strip().casefold()
+    if not lowered:
+        return False
+    return any(token in lowered for token in ("dialogue", "对话", "chat"))
+
+
 def is_operational_topic(name: str) -> bool:
     """Whether a topic name is operational vocabulary at all (single hit)."""
     return bool(_hits(str(name or "").casefold(), OPERATIONAL_TERMS))

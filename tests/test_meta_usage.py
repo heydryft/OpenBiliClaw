@@ -114,3 +114,47 @@ async def test_analyzer_drops_meta_usage_candidates_but_keeps_settles() -> None:
 
     contents = [candidate["content"] for candidate in result["candidates"]]  # type: ignore[index]
     assert contents == ["播客"]
+
+
+def test_dialogue_source_variants_are_recognised() -> None:
+    from openbiliclaw.soul.meta_usage import is_dialogue_source
+
+    for source in ("dialogue", "对话洞察", "chat feedback confirmed", "Dialogue Insight"):
+        assert is_dialogue_source(source), source
+    for source in ("watch history", "account_sync", "", "bilibili"):
+        assert not is_dialogue_source(source), source
+
+
+def test_preference_analysis_drops_dialogue_meta_usage_interests() -> None:
+    """Chat turns are also stored as dialogue events; the event path must filter too."""
+    from openbiliclaw.soul.preference_analyzer import PreferenceAnalyzer
+
+    class _StubRegistry:
+        async def complete_structured_task(self, **_: object) -> object:  # pragma: no cover
+            raise AssertionError("normalization must not call the model")
+
+    analyzer = PreferenceAnalyzer(registry=_StubRegistry())  # type: ignore[arg-type]
+    raw = {
+        "interests": [
+            {"name": "系统配置与测试", "category": "科技", "weight": 0.8, "source": "dialogue"},
+            {
+                "name": "端到端测试与系统验证",
+                "category": "科技",
+                "weight": 0.8,
+                "source": "chat feedback confirmed",
+            },
+            {"name": "软件测试", "category": "科技", "weight": 0.6, "source": "dialogue"},
+            {"name": "播客", "category": "音频", "weight": 0.6, "source": "dialogue"},
+            {
+                "name": "系统配置与测试",
+                "category": "科技",
+                "weight": 0.4,
+                "source": "watch history",
+            },
+        ]
+    }
+
+    normalized = analyzer._normalize_preference(raw)
+
+    names = [item["name"] for item in normalized["interests"]]
+    assert names == ["软件测试", "播客", "系统配置与测试"]
