@@ -52,4 +52,6 @@ Docker 中的网卡地址通常属于容器。请在自定义地址输入宿主�
 
 网络是否允许手机访问仍取决于 Wi-Fi 互访、系统防火墙和 tailnet grants。自动化测试不等于真实跨设备网络或手机相机验收；联调结果见[分支验收记录](verification/2026-10-26-mobile-connection.md)与[真实环境验证](verification/2026-10-27-mobile-connection-live.md)。
 
+按用户要求仅使用模拟器的后续结果见 [2026-10-28 复测记录](verification/2026-10-28-mobile-qr-e2e.md)：逐项区分 LAN / Tailscale 真实请求、原生解码、相机回调、手机网页渲染与公网条件，未完成项目不记为端到端通过。
+
 官方参考：[Tailscale 地址范围](https://tailscale.com/docs/reference/reserved-ip-addresses)、[mobile_scanner](https://pub.dev/packages/mobile_scanner)。
