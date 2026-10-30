@@ -233,12 +233,12 @@ After starting the backend, open `http://127.0.0.1:8420/web` (or just `http://12
 
 ## Recent Updates
 
-📌 Latest: **v0.3.232 (2026-10-26)**
+📌 Latest: **v0.3.233 (2026-10-30)**
 
-- **Reliable Douyin discovery**: fixes shared extension presence, native hot-word search and rotation; task pages are muted before loading, and failures retain results with backoff.
-- **Faster first screens and covers**: reduces startup blocking and duplicate requests; fixes QR login, configuration-save status, and chat and extension layouts.
-- **More reliable search inspiration**: adds optional free anonymous Keenable search and fixes Bing redirects and single-backend failure handling.
-- **More model options**: adds optional full Jev evaluation and updates MiniMax text presets to M3.1 Flash.
+- **More trustworthy portraits**: Bilibili history, favorites and follows carry real interaction times; imported backlog is no longer read as your behaviour, and library volume can no longer infer personality.
+- **Cleaner interests**: a new "using tools ≠ taste" gate keeps ops-style topics from becoming interests (14 compound topics filtered in a real rebuild, while "software testing" stayed).
+- **ChatGPT subscriptions work again**: fixes the Codex `json_mode` initialization failure that failed structured profiling calls wholesale.
+- **Repair existing portraits**: the new `openbiliclaw profile-repair-provenance` command (dry-run by default) removes MBTI-as-evidence items and falsified timeline claims.
 
 Full changelog: [docs/changelog.md](docs/changelog.md).
 

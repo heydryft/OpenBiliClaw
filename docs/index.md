@@ -6,6 +6,7 @@
 
 ## 👤 我是用户
 
+- [v0.3.233 发布记录](testing/2026-10-30-release-v0.3.233.md) — 画像时间溯源、「用工具≠口味」、Codex 订阅修复与存量画像修复命令；扩展源码无变更，商店不提审。
 - [v0.3.232 发布记录](testing/2026-10-26-release-v0.3.232.md) — 抖音发现与后台静音、首屏体验、搜索灵感修复；仓库产物和浏览器商店状态分别记录。
 - [技术合作伙伴](partners.md) — 硅基流动（SiliconFlow）为项目提供免费模型额度，「Powered by SiliconFlow」同时出现在 GitHub 项目首页、文档站与 README
 - [项目主页](index.html) — GitHub Pages 首页，桌面安装包 / 一句话安装、插件下载和产品卖点概览
