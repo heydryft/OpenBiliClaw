@@ -14,7 +14,9 @@
 
 - README 三处镜像兼容修复：硅基流动合作 logo 先由相对路径改为 Gitee 绝对地址，再改为 GitHub Pages 绝对地址，国内镜像、Gitee 页面与 GitHub 页面均可正常加载；只改文档资源引用，不改变任何产品行为。
 
-- 后端、桌面与扩展统一发布 `0.3.233`，同步版本文件、uv lock、项目首页及中英文 README。扩展源码自 `v0.3.232` 起没有变更，本轮只重建同源归档，不重复提审 Chrome Web Store / Firefox AMO，商店最新提交仍为 `0.3.232`；推荐导演保持默认关闭，Jev 中文质量仍待独立实测。核验结果见 [v0.3.233 发布记录](testing/2026-10-30-release-v0.3.233.md)。
+- 后端、桌面与扩展统一发布 `0.3.233`，同步版本文件、uv lock、项目首页及中英文 README。扩展源码自 `v0.3.232` 起没有变更，本轮只重建同源归档；随后按维护者要求把同版本 `0.3.233` 提交 Chrome Web Store / Firefox AMO 复审（仅版本号同步，插件脚本不变）；推荐导演保持默认关闭，Jev 中文质量仍待独立实测。核验结果见 [v0.3.233 发布记录](testing/2026-10-30-release-v0.3.233.md)。
+
+- `0.3.233` 商店提交完成：Chrome Web Store 上传 `crxVersion=0.3.233 / uploadState=SUCCEEDED / state=PENDING_REVIEW`（非 staged；上传一次成功，日志没有触发取消在审包的分支），Firefox AMO 返回 `version=0.3.233 / channel=listed / fileStatus=unreviewed`，reviewer 入口 `3038353`；AMO 隐私政策 PATCH 仍返回 HTTP 406，按既有逻辑保留 warning 并继续。两家商店审核通过前都不算已上架。
 
 ## v0.3.232：抖音发现修复与推荐体验改进（2026-10-26）
 

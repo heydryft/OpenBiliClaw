@@ -139,8 +139,25 @@
     }
   },
   "stores": {
-    "chrome_web_store": "not submitted this round; latest submission remains 0.3.232 (PENDING_REVIEW at last record)",
-    "firefox_amo": "not submitted this round; latest submission remains 0.3.232 (listed / unreviewed at last record)"
+    "chrome_web_store": {
+      "workflow_run": 41083671263,
+      "conclusion": "success",
+      "crx_version": "0.3.233",
+      "upload_state": "SUCCEEDED",
+      "state": "PENDING_REVIEW",
+      "staged": false,
+      "replaced_pending_submission": false
+    },
+    "firefox_amo": {
+      "workflow_run": 41083702009,
+      "conclusion": "success",
+      "version": "0.3.233",
+      "channel": "listed",
+      "file_status": "unreviewed",
+      "addon_status": "public",
+      "review_url": "https://addons.mozilla.org/en-US/reviewers/review/3038353",
+      "privacy_policy_patch": "HTTP 406 warning retained (unchanged from 0.3.232)"
+    }
   },
   "mirrors": {
     "gitee": {
