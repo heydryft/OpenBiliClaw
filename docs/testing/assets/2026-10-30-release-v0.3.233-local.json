@@ -44,7 +44,22 @@
     "ruff": "PASS: 900 files already formatted",
     "mypy": "PASS: 366 files",
     "release_version_check": "PASS",
-    "uv_lock_check": "PASS"
+    "uv_lock_check": "PASS",
+    "python_full_suite": {
+      "passed": 12246,
+      "failed": 4,
+      "skipped": 69,
+      "seconds": 8649.0,
+      "exit_code": 1,
+      "failed_tests": [
+        "tests/test_decision_runtime.py::test_adapter_failure_and_deadline_open_circuit_and_recover_after_cooldown",
+        "tests/test_desktop_web_issue_98_e2e.py::test_recommendations_and_runtime_recover_without_leaving_init_gate",
+        "tests/test_desktop_web_platform_recommendations_e2e.py::test_enabled_zero_stock_platform_survives_config_snapshot_retry",
+        "tests/test_refresh_runtime.py::test_managed_refresh_leaves_all_durable_eval_claims_to_coordinator"
+      ],
+      "isolation_rerun": "2 load-sensitive tests passed; 2 desktop-web Playwright tests are pre-existing timing races (1 pass / 2 fail across 3 isolated runs on unchanged files)",
+      "ci_full_suite": "PASS (run 41021130565)"
+    }
   },
   "note": "Local archive hashes only; CI release archives are checked separately after publication."
 }
